@@ -140,8 +140,8 @@ def test_postscript_job():
     assert p.postscript_data == t
 
     p.save_postscript()
-    assert p.postscript_data == ''
-    assert p.receiving_postscript == False
+    assert not p.postscript_data
+    assert not p.receiving_postscript
 
 
     files_list = glob(os.path.join("uploads", '*.ps'))

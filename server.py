@@ -90,12 +90,12 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         commands = []
         results = re.split('(@PJL)', text)
         results = [x for x in results if x]  # In case we have empty list elements
-        
+
         for i, result in enumerate(results):
             if result == '@PJL':
                 continue
             elif i > 0 and results[i-1] == '@PJL':
-                commands.append('@PJL' + results[i])
+                commands.append(f'@PJL{results[i]}')
             else:
                 commands.append(results[i])
 
@@ -105,11 +105,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
         # self.request is the TCP socket connected to the client
-        logger.info("handle - open_conn - " + self.client_address[0])
+        logger.info(f"handle - open_conn - {self.client_address[0]}")
         printer = Printer(logger)
-        
+
         emptyRequest = False
-        while emptyRequest == False:
+        while not emptyRequest:
 
             # Wait a maximum of conn_timeout seconds for another request
             # If conn_timeout elapses without request, close the connection
@@ -127,7 +127,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             request = self.data.decode('UTF-8')
             request = request.replace('\x1b%-12345X', '')
 
-            if request[0:2] == '%!':
+            if request[:2] == '%!':
                 printer.receiving_postscript = True
                 printer.postscript_data = request
 
@@ -142,7 +142,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                     printer.receiving_postscript = False
 
                 continue
-            
+
             commands = self.parse_commands(request)
 
             logger.debug('handle - request - ' + str(request.encode('UTF-8')))
@@ -156,7 +156,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 
                 for command in commands:
                     command = command.lstrip()
-                    
+
                     if command.startswith("@PJL "):
                         command = command[5:]
                         if printer.printing_raw_job:
@@ -183,7 +183,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                         elif command.startswith("RDYMSG"):
                             response += printer.command_rdymsg(command)
                         else:
-                            logger.error("handle - cmd_unknown - " + str(command))
+                            logger.error(f"handle - cmd_unknown - {str(command)}")
                     else:
                         response += printer.append_raw_print_job(command)
 
@@ -193,11 +193,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             except Exception as e:
                 tb = sys.exc_info()[2]
                 traceback.print_tb(tb)
-                logger.error("handle - error_caught - " + str(e))
+                logger.error(f"handle - error_caught - {str(e)}")
 
         if printer.printing_raw_job:
             printer.save_raw_print_job()
-        logger.info("handle - close_conn - " + self.client_address[0])
+        logger.info(f"handle - close_conn - {self.client_address[0]}")
 
 if __name__ == "__main__":
     HOST, PORT = args.host, 9100
